@@ -21,6 +21,10 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  
+  creditCards   CreditCard[]
+  transactions  Transaction[]
+  emis          Emi[]
 }
 
 model Account {
@@ -60,4 +64,57 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+model CreditCard {
+  id                Int      @id @default(autoincrement())
+  cardNumber        String
+  cvv               String
+  cardNumberMasked  String
+  cardHolderName    String
+  expiryDate        String
+  totalLimit        Int
+  availableLimit    Int
+  outstandingAmount Int
+  minimumDue        Int
+  dueDate           String
+  isBlocked         Boolean  @default(false)
+  
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionStatus {
+  COMPLETED
+  PENDING
+  FAILED
+}
+
+model Transaction {
+  id               Int               @id @default(autoincrement())
+  amount           Int
+  merchant         String
+  date             String
+  status           TransactionStatus @default(COMPLETED)
+  isConvertedToEmi Boolean           @default(false)
+  
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EmiStatus {
+  ACTIVE
+  COMPLETED
+}
+
+model Emi {
+  id                 Int       @id @default(autoincrement())
+  amount             Int
+  totalMonths        Int
+  paidMonths         Int       @default(0)
+  monthlyInstallment Int
+  status             EmiStatus @default(ACTIVE)
+  
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
