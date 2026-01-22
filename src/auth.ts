@@ -61,45 +61,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
-        async signIn({ account, profile }) {
-            try {
-                if (account?.provider === "github" && profile?.email) {
-                    const existingUser = await prisma.user.findUnique({
-                        where: { email: profile.email as string },
-                    });
-
-                    if (existingUser) {
-                        const linkedAccount = await prisma.account.findFirst({
-                            where: {
-                                provider: account.provider,
-                                providerAccountId: account.providerAccountId?.toString(),
-                            },
-                        });
-
-                        if (!linkedAccount) {
-                            await prisma.account.create({
-                                data: {
-                                    userId: existingUser.id,
-                                    type: account.type ?? "oauth",
-                                    provider: account.provider,
-                                    providerAccountId: account.providerAccountId?.toString() ?? "",
-                                    access_token: account.access_token ?? null,
-                                    refresh_token: account.refresh_token ?? null,
-                                    expires_at: account.expires_at ? Number(account.expires_at) : null,
-                                    token_type: account.token_type ?? null,
-                                    scope: account.scope ?? null,
-                                },
-                            });
-                        }
-
-                        return true;
-                    }
-                }
-            } catch (err) {
-                console.error("Error linking OAuth account:", err);
-                return false;
-            }
-
+        async signIn() {
+            // Auth.js v5 with PrismaAdapter automatically handles account linking.
+            // Return true to allow sign-in; the adapter will create/link the account.
             return true;
         },
         async jwt({ token, user }) {
