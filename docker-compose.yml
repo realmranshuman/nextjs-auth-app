@@ -1,0 +1,46 @@
+services:
+  app:
+    container_name: nextjs-auth-app
+    image: node:20-slim
+    working_dir: /app
+    command: >
+      sh -c "apt-get update && 
+             apt-get install -y git openssl ca-certificates && 
+             git clone https://github.com/realmranshuman/nextjs-auth-app.git . && 
+             npm ci && 
+             npx prisma generate && 
+             npm run build && 
+             npm start"
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/nextjs_auth?schema=public
+      AUTH_SECRET: standalonesecret123
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: true
+      NEXT_TELEMETRY_DISABLED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: nextjs-auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: nextjs_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
